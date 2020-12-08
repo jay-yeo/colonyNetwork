@@ -198,6 +198,26 @@ interface ColonyDataTypes {
   /// @param fundingPotId Id of the newly-created FundingPot
   event FundingPotAdded(uint256 fundingPotId);
 
+  /// @notice Event logged when a payment has its payout set
+  /// @param paymentId Id of the payment
+  /// @param token Token of the payout
+  /// @param amount Amount of token to be paid out
+  event PaymentPayoutSet(uint256 indexed paymentId, address token, uint256 amount);
+
+  /// @notice Event logged when a payment has its skill set
+  /// @param paymentId Id of the payment
+  /// @param skillId Token of the payout
+  event PaymentSkillSet(uint256 indexed paymentId, uint256 skillId);
+
+  /// @notice Event logged when a payment has its recipient set
+  /// @param paymentId Id of the payment
+  /// @param recipient Address to receive the payout
+  event PaymentRecipientSet(uint256 indexed paymentId, address recipient);
+
+  /// @notice Event logged when a payment is finalised
+  /// @param paymentId Id of the payment
+  event PaymentFinalized(uint256 indexed paymentId);
+
   struct RewardPayoutCycle {
     // Reputation root hash at the time of reward payout creation
     bytes32 reputationState;
