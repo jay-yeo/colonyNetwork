@@ -92,43 +92,35 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
     userLocks[_token][msg.sender].lockCount = _lockId;
   }
 
+  // Deprecated interface
   function deposit(address _token, uint256 _amount) public {
+    deposit(_token, _amount, false);
+  }
+
+  function deposit(address _token, uint256 _amount, bool _force) public tokenNotLocked(_token, _force) {
     require(ERC20Extended(_token).transferFrom(msg.sender, address(this), _amount), "colony-token-locking-transfer-failed"); // ignore-swc-123
 
-    makeConditionalDeposit(_token, _amount, msg.sender);
-
     Lock storage lock = userLocks[_token][msg.sender];
+    lock.balance = add(lock.balance, _amount);
+
+    // Handle the deprecated pendingBalance, if any (idempotent operation)
+    lock.balance = add(lock.balance, lock.DEPRECATED_pendingBalance);
+    delete lock.DEPRECATED_pendingBalance;
+
     emit UserTokenDeposited(_token, msg.sender, lock.balance);
   }
 
   function depositFor(address _token, uint256 _amount, address _recipient) public {
     require(ERC20Extended(_token).transferFrom(msg.sender, address(this), _amount), "colony-token-locking-transfer-failed"); // ignore-swc-123
 
-    makeConditionalDeposit(_token, _amount, _recipient);
+    if (isTokenUnlocked(_token, _recipient)) {
+      Lock storage lock = userLocks[_token][_recipient];
+      lock.balance = add(lock.balance, _amount);
 
-    Lock storage lock = userLocks[_token][_recipient];
-    emit UserTokenDeposited(_token, _recipient, lock.balance);
-  }
-
-  function claim(address _token, bool _force) public
-  tokenNotLocked(_token, _force)
-  {
-    Lock storage lock = userLocks[_token][msg.sender];
-    lock.balance = add(lock.balance, lock.pendingBalance);
-    lock.pendingBalance = 0;
-
-    emit UserTokenClaimed(_token, msg.sender, lock.balance);
-  }
-
-  function transfer(address _token, uint256 _amount, address _recipient, bool _force) public
-  notObligated(_token, _amount)
-  tokenNotLocked(_token, _force)
-  {
-    Lock storage userLock = userLocks[_token][msg.sender];
-    userLock.balance = sub(userLock.balance, _amount);
-    makeConditionalDeposit(_token, _amount, _recipient);
-
-    emit UserTokenTransferred(_token, msg.sender, _recipient, _amount);
+      emit UserTokenDeposited(_token, _recipient, lock.balance);
+    } else {
+      require(ERC20Extended(_token).transfer(_recipient, _amount), "colony-token-locking-deposit-failed");
+    }
   }
 
   // Deprecated interface
@@ -143,7 +135,7 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
     Lock storage lock = userLocks[_token][msg.sender];
     lock.balance = sub(lock.balance, _amount);
 
-    require(ERC20Extended(_token).transfer(msg.sender, _amount), "colony-token-locking-transfer-failed");
+    require(ERC20Extended(_token).transfer(msg.sender, _amount), "colony-token-locking-withdraw-failed");
 
     emit UserTokenWithdrawn(_token, msg.sender, _amount);
   }
@@ -172,7 +164,7 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
     // Transfer the the tokens
     Lock storage userLock = userLocks[_token][_user];
     userLock.balance = sub(userLock.balance, _amount);
-    makeConditionalDeposit(_token, _amount, _recipient);
+    require(ERC20Extended(_token).transfer(_recipient, _amount), "colony-token-locking-transfer-failed");
   }
 
   function reward(address _recipient, uint256 _amount) public pure { // solhint-disable-line no-empty-blocks
@@ -180,7 +172,7 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
   }
 
   function burn(uint256 _amount) public {
-    require(msg.sender==colonyNetwork, "colony-token-locking-not-colony-network");
+    require(msg.sender == colonyNetwork, "colony-token-locking-not-colony-network");
     address clnyToken = IMetaColony(IColonyNetwork(colonyNetwork).getMetaColony()).getToken();
     ERC20Extended(clnyToken).burn(_amount);
   }
@@ -206,15 +198,6 @@ contract TokenLocking is TokenLockingStorage, DSMath { // ignore-swc-123
   }
 
   // Internal functions
-
-  function makeConditionalDeposit(address _token, uint256 _amount, address _user) internal {
-    Lock storage userLock = userLocks[_token][_user];
-    if (isTokenUnlocked(_token, _user)) {
-      userLock.balance = add(userLock.balance, _amount);
-    } else {
-      userLock.pendingBalance = add(userLock.pendingBalance, _amount);
-    }
-  }
 
   function isTokenUnlocked(address _token, address _user) internal view returns (bool) {
     return userLocks[_token][_user].lockCount == totalLockCount[_token];

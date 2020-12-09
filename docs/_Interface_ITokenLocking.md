@@ -35,19 +35,6 @@ Function called to burn CLNY tokens held by TokenLocking.
 |_amount|uint256|Amount of CLNY to burn
 
 
-### `claim`
-
-Claim any pending tokens. Can only be called if user tokens are not locked.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_token|address|Address of the token to withdraw from
-|_force|bool|Pass true to forcibly unlock the token
-
-
 ### `deobligateStake`
 
 Deobligate the user some amount of tokens, releasing the stake. Can only be called by a colony or colonyNetwork.
@@ -64,7 +51,7 @@ Deobligate the user some amount of tokens, releasing the stake. Can only be call
 
 ### `deposit`
 
-Deposit `_amount` of colony tokens. Goes into pendingBalance if token is locked. Before calling this function user has to allow that their tokens can be transferred by token locking contract.
+DEPRECATED Deposit `_amount` of deposited tokens. Can only be called if user tokens are not locked. Before calling this function user has to allow that their tokens can be transferred by token locking contract.
 
 
 **Parameters**
@@ -73,6 +60,20 @@ Deposit `_amount` of colony tokens. Goes into pendingBalance if token is locked.
 |---|---|---|
 |_token|address|Address of the token to deposit
 |_amount|uint256|Amount to deposit
+
+
+### `deposit`
+
+Deposit `_amount` of colony tokens. Before calling this function user has to allow that their tokens can be transferred by token locking contract.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_token|address|Address of the token to deposit
+|_amount|uint256|Amount to deposit
+|_force|bool|Pass true to forcibly unlock the token
 
 
 ### `depositFor`
@@ -261,21 +262,6 @@ Set the ColonyNetwork contract address.
 |Name|Type|Description|
 |---|---|---|
 |_colonyNetwork|address|Address of the ColonyNetwork
-
-
-### `transfer`
-
-Transfer tokens to a recipient's pending balance. Can only be called if user tokens are not locked.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_token|address|Address of the token to transfer
-|_amount|uint256|Amount to transfer
-|_recipient|address|User to receive the tokens
-|_force|bool|Pass true to forcibly unlock the token
 
 
 ### `transferStake`

@@ -315,7 +315,8 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
 
     colony.obligateStake(msg.sender, motion.domainId, amount);
     colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), msg.sender, motion.domainId, amount, address(this));
-    tokenLocking.claim(token, true);
+    ERC20Extended(token).approve(address(tokenLocking), amount);
+    tokenLocking.deposit(token, amount, true);
 
     // Update the stake
     motion.stakes[_vote] = add(motion.stakes[_vote], amount);
@@ -445,7 +446,10 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
 
       emit MotionEventSet(_motionId, REVEAL_END);
     }
-    tokenLocking.transfer(token, voterReward, msg.sender, true);
+
+    tokenLocking.withdraw(token, voterReward, true);
+    ERC20Extended(token).approve(address(tokenLocking), voterReward);
+    tokenLocking.depositFor(token, voterReward, msg.sender);
   }
 
   /// @notice Escalate a motion to a higher domain
@@ -575,7 +579,9 @@ contract VotingReputation is ColonyExtension, PatriciaTreeProofs {
     require(stakerReward > 0, "voting-rep-nothing-to-claim");
     delete stakes[_motionId][_staker][_vote];
 
-    tokenLocking.transfer(token, stakerReward, _staker, true);
+    tokenLocking.withdraw(token, stakerReward, true);
+    ERC20Extended(token).approve(address(tokenLocking), stakerReward);
+    tokenLocking.depositFor(token, stakerReward, _staker);
 
     if (repPenalty > 0) {
       colony.emitDomainReputationPenalty(

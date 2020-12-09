@@ -54,8 +54,8 @@ contract("Colony Staking", (accounts) => {
     await token.approve(tokenLockingAddress, DEPOSIT, { from: USER1 });
 
     tokenLocking = await ITokenLocking.at(tokenLockingAddress);
-    await tokenLocking.deposit(token.address, DEPOSIT, { from: USER0 });
-    await tokenLocking.deposit(token.address, DEPOSIT, { from: USER1 });
+    await tokenLocking.methods["deposit(address,uint256,bool)"](token.address, DEPOSIT, true, { from: USER0 });
+    await tokenLocking.methods["deposit(address,uint256,bool)"](token.address, DEPOSIT, true, { from: USER1 });
   });
 
   describe("when managing stakes", () => {
@@ -161,16 +161,6 @@ contract("Colony Staking", (accounts) => {
       );
     });
 
-    it("should not let users transfer more than the unobligated balance", async () => {
-      await colony.approveStake(USER0, 1, DEPOSIT, { from: USER1 });
-      await colony.obligateStake(USER1, 1, DEPOSIT, { from: USER0 });
-
-      await checkErrorRevert(
-        tokenLocking.transfer(token.address, 1, ethers.constants.AddressZero, false, { from: USER1 }),
-        "colony-token-locking-excess-obligation"
-      );
-    });
-
     it("should correctly accumulate multiple approvals", async () => {
       await colony.approveStake(USER0, 1, WAD, { from: USER1 });
       await colony.approveStake(USER0, 1, WAD, { from: USER1 });
@@ -217,10 +207,13 @@ contract("Colony Staking", (accounts) => {
     it("should allow for a slashed stake to be sent to a beneficiary", async () => {
       await colony.approveStake(USER0, 1, WAD, { from: USER1 });
       await colony.obligateStake(USER1, 1, WAD, { from: USER0 });
+
+      const balancePre = await token.balanceOf(USER2);
+
       await colony.transferStake(1, UINT256_MAX, USER0, USER1, 1, WAD, USER2, { from: USER2 });
 
-      const deposit = await tokenLocking.getUserLock(token.address, USER2);
-      expect(deposit.balance).to.eq.BN(WAD);
+      const balancePost = await token.balanceOf(USER2);
+      expect(balancePost.sub(balancePre)).to.eq.BN(WAD);
     });
   });
 });

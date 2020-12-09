@@ -49,29 +49,24 @@ interface ITokenLocking is TokenLockingDataTypes {
   /// @param _lockId Id of the lock user wants to increment to
   function incrementLockCounterTo(address _token, uint256 _lockId) external;
 
-  /// @notice Deposit `_amount` of colony tokens. Goes into pendingBalance if token is locked.
+  /// @notice DEPRECATED Deposit `_amount` of deposited tokens. Can only be called if user tokens are not locked.
   /// Before calling this function user has to allow that their tokens can be transferred by token locking contract.
   /// @param _token Address of the token to deposit
   /// @param _amount Amount to deposit
   function deposit(address _token, uint256 _amount) external;
+
+  /// @notice Deposit `_amount` of colony tokens.
+  /// Before calling this function user has to allow that their tokens can be transferred by token locking contract.
+  /// @param _token Address of the token to deposit
+  /// @param _amount Amount to deposit
+  /// @param _force Pass true to forcibly unlock the token
+  function deposit(address _token, uint256 _amount, bool _force) external;
 
   /// @notice Deposit `_amount` of colony tokens in the recipient's account. Goes into pendingBalance if token is locked.
   /// @param _token Address of the token to deposit
   /// @param _amount Amount to deposit
   /// @param _recipient User to receive the tokens
   function depositFor(address _token, uint256 _amount, address _recipient) external;
-
-  /// @notice Claim any pending tokens. Can only be called if user tokens are not locked.
-  /// @param _token Address of the token to withdraw from
-  /// @param _force Pass true to forcibly unlock the token
-  function claim(address _token, bool _force) external;
-
-  /// @notice Transfer tokens to a recipient's pending balance. Can only be called if user tokens are not locked.
-  /// @param _token Address of the token to transfer
-  /// @param _amount Amount to transfer
-  /// @param _recipient User to receive the tokens
-  /// @param _force Pass true to forcibly unlock the token
-  function transfer(address _token, uint256 _amount, address _recipient, bool _force) external;
 
   /// @notice DEPRECATED Withdraw `_amount` of deposited tokens. Can only be called if user tokens are not locked.
   /// @param _token Address of the token to withdraw from
